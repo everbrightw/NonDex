@@ -1478,6 +1478,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /* ------------------------------------------------------------ */
     // spliterators
 
+    public interface ForEachProvider<T> {
+        void original_forEachRemaining(Consumer<? super T> action);
+    }
+
     static class HashMapSpliterator<K,V> {
         final HashMap<K,V> map;
         Node<K,V> current;          // current node
@@ -1516,10 +1520,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     static final class KeySpliterator<K,V>
         extends HashMapSpliterator<K,V>
-        implements Spliterator<K> {
+        implements Spliterator<K>, ForEachProvider<K> {
+
+        private final SpliteratorShuffler<K> shuffler;
+
         KeySpliterator(HashMap<K,V> m, int origin, int fence, int est,
                        int expectedModCount) {
             super(m, origin, fence, est, expectedModCount);
+            this.shuffler = new SpliteratorShuffler<>(this);
         }
 
         public KeySpliterator<K,V> trySplit() {
@@ -1530,6 +1538,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEachRemaining(Consumer<? super K> action) {
+            shuffler.forEachRemaining(action);
+        }
+
+        // Original forEachRemaining
+        public void original_forEachRemaining(Consumer<? super K> action) {
             int i, hi, mc;
             if (action == null)
                 throw new NullPointerException();
@@ -1588,10 +1601,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     static final class ValueSpliterator<K,V>
         extends HashMapSpliterator<K,V>
-        implements Spliterator<V> {
+        implements Spliterator<V>, ForEachProvider<V> {
+
+        private final SpliteratorShuffler<V> shuffler;
+
         ValueSpliterator(HashMap<K,V> m, int origin, int fence, int est,
                          int expectedModCount) {
             super(m, origin, fence, est, expectedModCount);
+            this.shuffler = new SpliteratorShuffler<>(this);
         }
 
         public ValueSpliterator<K,V> trySplit() {
@@ -1602,6 +1619,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEachRemaining(Consumer<? super V> action) {
+            shuffler.forEachRemaining(action);
+        }
+
+        public void original_forEachRemaining(Consumer<? super V> action) {
             int i, hi, mc;
             if (action == null)
                 throw new NullPointerException();
@@ -1659,10 +1680,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     static final class EntrySpliterator<K,V>
         extends HashMapSpliterator<K,V>
-        implements Spliterator<Map.Entry<K,V>> {
+        implements Spliterator<Map.Entry<K,V>>, ForEachProvider<Map.Entry<K,V>> {
+
+        private final SpliteratorShuffler<Map.Entry<K, V>> shuffler;
+
         EntrySpliterator(HashMap<K,V> m, int origin, int fence, int est,
                          int expectedModCount) {
             super(m, origin, fence, est, expectedModCount);
+            this.shuffler = new SpliteratorShuffler<>(this);
         }
 
         public EntrySpliterator<K,V> trySplit() {
@@ -1673,6 +1698,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEachRemaining(Consumer<? super Map.Entry<K,V>> action) {
+            shuffler.forEachRemaining(action);
+        }
+
+        public void original_forEachRemaining(Consumer<? super Map.Entry<K,V>> action) {
             int i, hi, mc;
             if (action == null)
                 throw new NullPointerException();
